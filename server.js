@@ -4,20 +4,11 @@ var config = require("./config");
 
 var firebaseRef = new Firebase("https://hackthenorth.firebaseio.com/");
 
-var parseRequestForm = {
-    where: {
-        updates_enabled: true
-    },
-    data: {
-        title:' update.name',  // Android-only feature
-        alert: 'update.description'
-    }
-};
+
 
 var parseOptions = {
     uri: 'https://api.parse.com/1/push',
     method: 'POST',
-    form: parseRequestForm,
     headers: {
         'X-Parse-Application-Id': PARSE_APPLICATION_ID,
         'X-Parse-REST-API-Key': PARSE_REST_API_KEY,
@@ -27,7 +18,16 @@ var parseOptions = {
 
 firebaseRef.child("/mobile/updates").on("child_added", function(snapshot) {
     var update = snapshot.val();
-
+    var parseRequestForm = {
+        where: {
+            updates_enabled: true
+        },
+        data: {
+            title: update.name,  // Android-only feature
+            alert: update.description
+        }
+    };
+    parseOptions['form'] = parseRequestForm;
     request(parseOptions, function (error, response, body) {
         if (!error && response.statusCode == 200) {
             console.log("REQUEST WORKED");
