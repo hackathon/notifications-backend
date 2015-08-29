@@ -1,0 +1,12 @@
+{
+  "name": "hackthenorth-push",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "author": "hackthenorth",
+  "license": "ISC",
+  "dependencies": {
+    "firebase": "^2.2.9",
+    "request": "^2.61.0"
+  }
+}
