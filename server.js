@@ -15,10 +15,14 @@ var parseOptions = {
         'Content-Type': 'application/json'
     }
 };
+var date = new Date();
 
 // Updates Listener
 firebaseRef.child("/mobile/updates").on("child_added", function(snapshot) {
     var update = snapshot.val();
+    if (update.time && new Date(update.time) - date < 0) {
+        return;
+    }
     var updateForm = {
         where: { 
             updates_enabled: true
@@ -46,6 +50,9 @@ firebaseRef.child("/mobile/updates").on("child_added", function(snapshot) {
 // Mentoring Requests Listener
 firebaseRef.child("/mobile/mentoring/requests").on("child_added", function(snapshot) {
     var mentoringRequest = snapshot.val();
+    if (mentoringRequest.time && new Date(mentoringRequest.created_time) - date < 0) {
+        return;
+    }
     var category = mentoringRequest.category
     var mentoringRequestForm = {
         where: { 
@@ -82,7 +89,7 @@ firebaseRef.child("/mobile/mentoring/requests").on("child_added", function(snaps
 firebaseRef.child("/mobile/chats").on("child_added", function(snapshot) {
     var chatForm = {
         where: { 
-            //chat_enabled: true
+            chat_enabled: true
         }, 
         data: {}
     };
@@ -97,8 +104,12 @@ firebaseRef.child("/mobile/chats").on("child_added", function(snapshot) {
         var user_ids = [mentor_id, hacker_id];
     
         firebaseRef.child("/mobile/chats/"+chatKey+"/messages").on("child_added", function(messageSnapshot) {
-            var sender_id = messageSnapshot.val().sender;
-            var text = messageSnapshot.val().text;
+            var message = messageSnapshot.val();
+            var sender_id = message.sender;
+            var text = message.text;
+            if (message.timestamp && new Date(message.timestamp) - date < 0) {
+                return;
+            }
             for (var i in user_ids) {
                 user_id = user_ids[i];
                 if (user_id != sender_id) {
