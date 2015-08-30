@@ -16,6 +16,7 @@ var parseOptions = {
     }
 };
 
+// Updates Listener
 firebaseRef.child("/mobile/updates").on("child_added", function(snapshot) {
     var update = snapshot.val();
     var updateForm = {
@@ -39,9 +40,10 @@ firebaseRef.child("/mobile/updates").on("child_added", function(snapshot) {
     });
 
 }, function (errorObject) {
-  console.log("The read failed: " + errorObject.code);
+  console.log("The update read failed: " + errorObject.code);
 });
 
+// Mentoring Requests Listener
 firebaseRef.child("/mobile/mentoring/requests").on("child_added", function(snapshot) {
     var mentoringRequest = snapshot.val();
     var category = mentoringRequest.category
@@ -54,14 +56,13 @@ firebaseRef.child("/mobile/mentoring/requests").on("child_added", function(snaps
         }
     };
     firebaseRef.child("/mobile/users").on("value", function(userSnapshot) {
-        allUsers = userSnapshot.val();
+        var allUsers = userSnapshot.val();
         for (var key in allUsers) {
             user = allUsers[key];
             
             if (user.is_mentor && user.subscriptions.indexOf(category) > -1 && user.id != undefined){
                 mentoringRequestForm['where']['email_hash'] = user.id;
                 parseOptions['body'] = mentoringRequestForm;
-                console.log(mentoringRequestForm);
                 request(parseOptions, function (error, response, body) {
                     if (!error && response.statusCode == 200) {
                         console.log("MENTORING REQUEST WORKED");
@@ -74,5 +75,49 @@ firebaseRef.child("/mobile/mentoring/requests").on("child_added", function(snaps
         }
     });
 }, function (errorObject) {
-  console.log("The read failed: " + errorObject.code);
+  console.log("The mentoring request read failed: " + errorObject.code);
+});
+
+// Chat Listener
+firebaseRef.child("/mobile/chats").on("child_added", function(snapshot) {
+    var chatForm = {
+        where: { 
+            //chat_enabled: true
+        }, 
+        data: {}
+    };
+    var chatKey = snapshot.key();
+    var chat = snapshot.val();
+    if (chat != undefined && chat['request'] != undefined && chat['request']['mentor'] != undefined) {
+        var mentor_id = chat['request']['mentor']['id'];
+        var hacker_id = chat['request']['hacker']['id'];
+        if (mentor_id == undefined || mentor_id == '' || hacker_id == undefined || hacker_id == ''){
+            return;
+        }
+        var user_ids = [mentor_id, hacker_id];
+    
+        firebaseRef.child("/mobile/chats/"+chatKey+"/messages").on("child_added", function(messageSnapshot) {
+            var sender_id = messageSnapshot.val().sender;
+            var text = messageSnapshot.val().text;
+            for (var i in user_ids) {
+                user_id = user_ids[i];
+                if (user_id != sender_id) {
+                    chatForm['where']['email_hash'] = user_id;
+                    chatForm['data']['alert'] = text;
+                    parseOptions['body'] = chatForm;
+                    console.log(user_id);
+                    request(parseOptions, function (error, response, body) {
+                        if (!error && response.statusCode == 200) {
+                            console.log("CHAT NOTIFICATION WORKED");
+                        }
+                        else {
+                            console.log(body);
+                        }
+                    });
+                }
+            }
+        });
+    }  
+}, function (errorObject) {
+  console.log("The chat read failed: " + errorObject.code);
 });
