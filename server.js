@@ -1,10 +1,9 @@
 var Firebase = require("firebase");
 var request = require("request");
+var md5 = require("md5");
 var config = require("./config");
 
 var firebaseRef = new Firebase("https://hackthenorth.firebaseio.com/");
-
-
 
 var parseOptions = {
     uri: 'https://api.parse.com/1/push',
@@ -45,25 +44,35 @@ firebaseRef.child("/mobile/updates").on("child_added", function(snapshot) {
 
 firebaseRef.child("/mobile/mentoring/requests").on("child_added", function(snapshot) {
     var mentoringRequest = snapshot.val();
+    var category = mentoringRequest.category
     var mentoringRequestForm = {
         where: { 
             mentoring_requests_enabled: true
         }, 
         data: { 
-            alert: mentoringRequest['hacker'].name + " needs a mentor!"
+            alert: 'New ' + category +' request: ' + mentoringRequest.description
         }
     };
-
-    parseOptions['body'] = mentoringRequestForm;
-    request(parseOptions, function (error, response, body) {
-        if (!error && response.statusCode == 200) {
-            console.log("MENTORING REQUEST WORKED");
-        }
-        else {
-            console.log(body);
+    firebaseRef.child("/mobile/users").on("value", function(userSnapshot) {
+        allUsers = userSnapshot.val();
+        for (var key in allUsers) {
+            user = allUsers[key];
+            
+            if (user.is_mentor && user.subscriptions.indexOf(category) > -1 && user.id != undefined){
+                mentoringRequestForm['where']['email_hash'] = user.id;
+                parseOptions['body'] = mentoringRequestForm;
+                console.log(mentoringRequestForm);
+                request(parseOptions, function (error, response, body) {
+                    if (!error && response.statusCode == 200) {
+                        console.log("MENTORING REQUEST WORKED");
+                    }
+                    else {
+                        console.log(body);
+                    }
+                });
+            }
         }
     });
-
 }, function (errorObject) {
   console.log("The read failed: " + errorObject.code);
 });
