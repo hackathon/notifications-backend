@@ -1,6 +1,5 @@
 var Firebase = require("firebase");
 var request = require("request");
-var md5 = require("md5");
 var config = require("./config");
 
 var firebaseRef = new Firebase("https://hackthenorth.firebaseio.com/");

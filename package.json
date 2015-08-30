@@ -7,7 +7,6 @@
   "license": "ISC",
   "dependencies": {
     "firebase": "^2.2.9",
-    "md5": "^2.0.0",
     "request": "^2.61.0"
   }
 }
