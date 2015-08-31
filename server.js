@@ -27,6 +27,7 @@ firebaseRef.child("/mobile/updates").on("child_added", function(snapshot) {
             updates_enabled: true
         }, 
         data: { 
+            uri: 'hackthenorth://mainactivity',
             title: update.name, 
             alert: update.description
         }
@@ -35,7 +36,7 @@ firebaseRef.child("/mobile/updates").on("child_added", function(snapshot) {
     parseOptions['body'] = updateForm;
     request(parseOptions, function (error, response, body) {
         if (!error && response.statusCode == 200) {
-            console.log("REQUEST WORKED");
+            console.log("UPDATE REQUEST WORKED");
         }
         else {
             console.log(body);
@@ -49,15 +50,17 @@ firebaseRef.child("/mobile/updates").on("child_added", function(snapshot) {
 // Mentoring Requests Listener
 firebaseRef.child("/mobile/mentoring/requests").on("child_added", function(snapshot) {
     var mentoringRequest = snapshot.val();
-    if (mentoringRequest.time && new Date(mentoringRequest.created_time) - date < 0) {
+    if (mentoringRequest.created_time && new Date(mentoringRequest.created_time) - date < 0) {
         return;
     }
+    console.log( new Date(mentoringRequest.created_time) - date);
     var category = mentoringRequest.category
     var mentoringRequestForm = {
         where: { 
-            mentoring_requests_enabled: true
+           mentoring_requests_enabled: true
         }, 
         data: { 
+            uri: 'hackthenorth://mentoractivity',
             alert: 'New ' + category +' request: ' + mentoringRequest.description
         }
     };
@@ -69,6 +72,7 @@ firebaseRef.child("/mobile/mentoring/requests").on("child_added", function(snaps
             if (user.is_mentor && user.subscriptions.indexOf(category) > -1 && user.id != undefined){
                 mentoringRequestForm['where']['email_hash'] = user.id;
                 parseOptions['body'] = mentoringRequestForm;
+                console.log(parseOptions);
                 request(parseOptions, function (error, response, body) {
                     if (!error && response.statusCode == 200) {
                         console.log("MENTORING REQUEST WORKED");
