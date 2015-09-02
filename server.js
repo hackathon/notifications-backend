@@ -14,20 +14,16 @@ var parseOptions = {
         'Content-Type': 'application/json'
     }
 };
-var date = new Date();
 
 // Updates Listener
 firebaseRef.child("/mobile/updates").on("child_added", function(snapshot) {
     var update = snapshot.val();
-    if (update.time && new Date(update.time) - date < 0) {
-        return;
-    }
     var updateForm = {
         where: { 
             updates_enabled: true
         }, 
         data: { 
-            uri: 'hackthenorth://mainactivity',
+            uri: 'hackthenorth://updates',
             title: update.name, 
             alert: update.description
         }
@@ -50,17 +46,13 @@ firebaseRef.child("/mobile/updates").on("child_added", function(snapshot) {
 // Mentoring Requests Listener
 firebaseRef.child("/mobile/mentoring/requests").on("child_added", function(snapshot) {
     var mentoringRequest = snapshot.val();
-    if (mentoringRequest.created_time && new Date(mentoringRequest.created_time) - date < 0) {
-        return;
-    }
-    console.log( new Date(mentoringRequest.created_time) - date);
     var category = mentoringRequest.category
     var mentoringRequestForm = {
         where: { 
-           mentoring_requests_enabled: true
+          mentoring_requests_enabled: true
         }, 
         data: { 
-            uri: 'hackthenorth://mentoractivity',
+            uri: 'hackthenorth://open-requests',
             alert: 'New ' + category +' request: ' + mentoringRequest.description
         }
     };
@@ -110,16 +102,12 @@ firebaseRef.child("/mobile/chats").on("child_added", function(snapshot) {
             var message = messageSnapshot.val();
             var sender_id = message.sender;
             var text = message.text;
-            if (message.timestamp && new Date(message.timestamp) - date < 0) {
-                return;
-            }
             for (var i in user_ids) {
                 user_id = user_ids[i];
                 if (user_id != sender_id) {
                     chatForm['where']['email_hash'] = user_id;
                     chatForm['data']['alert'] = text;
                     parseOptions['body'] = chatForm;
-                    console.log(user_id);
                     request(parseOptions, function (error, response, body) {
                         if (!error && response.statusCode == 200) {
                             console.log("CHAT NOTIFICATION WORKED");
