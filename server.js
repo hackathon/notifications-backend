@@ -16,11 +16,11 @@ var parseOptions = {
 };
 
 // Updates Listener
-firebaseRef.child("/mobile/updates").on("child_added", function(snapshot) {
+firebaseRef.child("/mobile/updates").limitToLast(1).on("child_added", function(snapshot) {
     var update = snapshot.val();
     var updateForm = {
         where: { 
-            updates_enabled: true
+            updates_enabled: true,
         }, 
         data: { 
             uri: 'hackthenorth://updates',
@@ -82,13 +82,15 @@ firebaseRef.child("/mobile/mentoring/requests").on("child_added", function(snaps
 
 // Chat Listener
 firebaseRef.child("/mobile/chats").on("child_added", function(snapshot) {
+    var chatKey = snapshot.key();
     var chatForm = {
         where: { 
             chat_enabled: true
         }, 
-        data: {}
+        data: {
+            uri: "hackthenorth://chat/" + chatKey
+        }
     };
-    var chatKey = snapshot.key();
     var chat = snapshot.val();
     if (chat != undefined && chat['request'] != undefined && chat['request']['mentor'] != undefined) {
         var mentor_id = chat['request']['mentor']['id'];
