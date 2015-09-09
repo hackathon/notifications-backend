@@ -4,6 +4,14 @@ var config = require("./config");
 
 var firebaseRef = new Firebase("https://hackthenorth.firebaseio.com/");
 
+firebaseRef.authWithCustomToken(FIREBASE_AUTH_TOKEN, function(error, authData) {
+    if (error) {
+     console.log("Authentication Failed!", error);
+    } else {
+        console.log("Authentication success!");
+    }
+});
+
 var parseOptions = {
     uri: 'https://api.parse.com/1/push',
     method: 'POST',
@@ -15,9 +23,15 @@ var parseOptions = {
     }
 };
 
+var currentTime = new Date();
 // Updates Listener
 firebaseRef.child("/mobile/updates").limitToLast(1).on("child_added", function(snapshot) {
     var update = snapshot.val();
+    var updateTime = new Date(update.time);
+
+    if (updateTime - currentTime < 0) {
+        return;
+    }
     var updateForm = {
         where: { 
             updates_enabled: true,
@@ -46,7 +60,15 @@ firebaseRef.child("/mobile/updates").limitToLast(1).on("child_added", function(s
 // Mentoring Requests Listener
 firebaseRef.child("/mobile/mentoring/requests").on("child_added", function(snapshot) {
     var mentoringRequest = snapshot.val();
-    var category = mentoringRequest.category
+    var requestTime = new Date(mentoringRequest.created_time);
+    var requestClaimTimestamp = mentoringRequest.claimed_time;
+    if (requestClaimTimestamp != undefined && requestClaimTimestamp != '') {
+        return;
+    }
+    if (requestTime - currentTime < 0) {
+        return;
+    }
+    var category = mentoringRequest.category;
     var mentoringRequestForm = {
         where: { 
           mentoring_requests_enabled: true
@@ -98,16 +120,23 @@ firebaseRef.child("/mobile/chats").on("child_added", function(snapshot) {
         if (mentor_id == undefined || mentor_id == '' || hacker_id == undefined || hacker_id == ''){
             return;
         }
-        var user_ids = [mentor_id, hacker_id];
+        var userIds = [mentor_id, hacker_id];
     
         firebaseRef.child("/mobile/chats/"+chatKey+"/messages").on("child_added", function(messageSnapshot) {
             var message = messageSnapshot.val();
-            var sender_id = message.sender;
+            if (message.timestamp == undefined) {
+                return;
+            }
+            var messageTime = new Date(message.timestamp);
+            if (messageTime - currentTime < 0) {
+                return;
+            }
+            var senderId = message.sender;
             var text = message.text;
-            for (var i in user_ids) {
-                user_id = user_ids[i];
-                if (user_id != sender_id) {
-                    chatForm['where']['email_hash'] = user_id;
+            for (var i in userIds) {
+                var userId = userIds[i];
+                if (userId != senderId) {
+                    chatForm['where']['email_hash'] = userId;
                     chatForm['data']['alert'] = text;
                     parseOptions['body'] = chatForm;
                     request(parseOptions, function (error, response, body) {
