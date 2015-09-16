@@ -69,6 +69,7 @@ firebaseRef.child("/mobile/mentoring/requests").on("child_added", function(snaps
         return;
     }
     var category = mentoringRequest.category;
+    var hackerId = mentoringRequest.hacker.id;
     var mentoringRequestForm = {
         where: { 
           mentoring_requests_enabled: true
@@ -83,7 +84,8 @@ firebaseRef.child("/mobile/mentoring/requests").on("child_added", function(snaps
         for (var key in allUsers) {
             user = allUsers[key];
             
-            if (user.is_mentor && user.subscriptions.indexOf(category) > -1 && user.id != undefined){
+            if (user.is_mentor && user.subscriptions.indexOf(category) > -1 && 
+                user.id != undefined && user.id != hackerId){
                 mentoringRequestForm['where']['email_hash'] = user.id;
                 parseOptions['body'] = mentoringRequestForm;
                 console.log(parseOptions);
@@ -115,12 +117,12 @@ firebaseRef.child("/mobile/chats").on("child_added", function(snapshot) {
     };
     var chat = snapshot.val();
     if (chat != undefined && chat['request'] != undefined && chat['request']['mentor'] != undefined) {
-        var mentor_id = chat['request']['mentor']['id'];
-        var hacker_id = chat['request']['hacker']['id'];
-        if (mentor_id == undefined || mentor_id == '' || hacker_id == undefined || hacker_id == ''){
+        var mentorId = chat['request']['mentor']['id'];
+        var hackerId = chat['request']['hacker']['id'];
+        if (mentorId == undefined || mentorId == '' || hackerId == undefined || hackerId == ''){
             return;
         }
-        var userIds = [mentor_id, hacker_id];
+        var userIds = [mentorId, hackerId];
     
         firebaseRef.child("/mobile/chats/"+chatKey+"/messages").on("child_added", function(messageSnapshot) {
             var message = messageSnapshot.val();
