@@ -32,13 +32,21 @@ firebaseRef.child("/mobile/updates").limitToLast(1).on("child_added", function(s
     if (updateTime - currentTime < 0) {
         return;
     }
+    if (update.description.length < 5) {
+        return;
+    }
+
+    var androidTitle = update.name;
+    if (androidTitle == undefined || androidTitle.length == 0) {
+        androidTitle = "Hack the North";
+    }
     var updateForm = {
         where: { 
             updates_enabled: true,
         }, 
         data: { 
             uri: 'hackthenorth://updates',
-            title: update.name, 
+            title: androidTitle, 
             alert: update.description
         }
     };
@@ -70,13 +78,17 @@ firebaseRef.child("/mobile/mentoring/requests").on("child_added", function(snaps
     }
     var category = mentoringRequest.category;
     var hackerId = mentoringRequest.hacker.id;
+    var description = 'New ' + category + ' request'
+    if (mentoringRequest.description != undefined && mentoringRequest.description.length >= 5) {
+        description += ': ' + mentoringRequest.description;
+    }
     var mentoringRequestForm = {
         where: { 
           mentoring_requests_enabled: true
         }, 
         data: { 
             uri: 'hackthenorth://open-requests',
-            alert: 'New ' + category +' request: ' + mentoringRequest.description
+            alert: description
         }
     };
     firebaseRef.child("/mobile/users").on("value", function(userSnapshot) {
@@ -84,8 +96,9 @@ firebaseRef.child("/mobile/mentoring/requests").on("child_added", function(snaps
         for (var key in allUsers) {
             user = allUsers[key];
             
-            if (user.is_mentor && user.subscriptions.indexOf(category) > -1 && 
-                user.id != undefined && user.id != hackerId){
+            if (user.is_mentor && user.subscriptions !== undefined && 
+                user.subscriptions.indexOf(category) > -1 && 
+                user.id !== undefined && user.id !== hackerId){
                 mentoringRequestForm['where']['email_hash'] = user.id;
                 parseOptions['body'] = mentoringRequestForm;
                 console.log(parseOptions);
