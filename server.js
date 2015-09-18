@@ -24,6 +24,14 @@ var parseOptions = {
 };
 
 var times = {"update": new Date(), "mentoring": new Date(), "chat": new Date()};
+var parseFirstName = function(name) {
+    splitName = name.split(" ");
+    if (splitName.length == 1) {
+        return name;
+    }
+    return splitName.slice(0, splitName.length - 1).join(" ");
+}
+
 // Updates Listener
 firebaseRef.child("/mobile/updates").limitToLast(1).on("child_added", function(snapshot) {
     var update = snapshot.val();
@@ -32,22 +40,18 @@ firebaseRef.child("/mobile/updates").limitToLast(1).on("child_added", function(s
     if (updateTime - times['update'] < 0) {
         return;
     }
-    if (update.description.length < 5) {
+    if (update.name == undefined || update.name.length == 0) {
         return;
     }
     times['update'] = updateTime;
-    var androidTitle = update.name;
-    if (androidTitle == undefined || androidTitle.length == 0) {
-        androidTitle = "Hack the North";
-    }
     var updateForm = {
         where: { 
             updates_enabled: true,
         }, 
         data: { 
             uri: 'hackthenorth://updates',
-            title: androidTitle, 
-            alert: update.description
+            title: 'New Update', 
+            alert: update.name
         }
     };
 
@@ -76,20 +80,26 @@ firebaseRef.child("/mobile/mentoring/requests").on("child_added", function(snaps
     if (requestTime - times['mentoring'] < 0) {
         return;
     }
-    times['mentoring'] = requestTime;
     var category = mentoringRequest.category;
     var hackerId = mentoringRequest.hacker.id;
-    var description = 'New ' + category + ' request'
-    if (mentoringRequest.description != undefined && mentoringRequest.description.length >= 5) {
-        description += ': ' + mentoringRequest.description;
+    var description = mentoringRequest.description;
+    console.log(category);
+    console.log(hackerId);
+    console.log(description);
+    if (category == undefined || hackerId == undefined || description == undefined) {
+        return;
     }
+    category = category.replace(category[0], category[0].toUpperCase());
+    times['mentoring'] = requestTime;
+    var alertMessage = category + ': ' + description;
     var mentoringRequestForm = {
         where: { 
           mentoring_requests_enabled: true
         }, 
         data: { 
             uri: 'hackthenorth://open-requests',
-            alert: description
+            title: 'New Request',
+            alert: alertMessage
         }
     };
     firebaseRef.child("/mobile/users").on("value", function(userSnapshot) {
@@ -99,13 +109,11 @@ firebaseRef.child("/mobile/mentoring/requests").on("child_added", function(snaps
         var allUsers = userSnapshot.val();
         for (var key in allUsers) {
             user = allUsers[key];
-            
             if (user.is_mentor && user.subscriptions != undefined && 
-                user.subscriptions.indexOf(category) > -1 && 
+                user.subscriptions.indexOf(mentoringRequest.category) > -1 && 
                 user.id != undefined && user.id !== hackerId){
                 mentoringRequestForm['where']['email_hash'] = user.id;
                 parseOptions['body'] = mentoringRequestForm;
-                console.log(parseOptions);
                 request(parseOptions, function (error, response, body) {
                     if (!error && response.statusCode == 200) {
                         console.log("MENTORING REQUEST WORKED");
@@ -129,17 +137,21 @@ firebaseRef.child("/mobile/chats").on("child_added", function(snapshot) {
             chat_enabled: true
         }, 
         data: {
-            uri: "hackthenorth://chat/" + chatKey
+            uri: "hackthenorth://chat/" + chatKey,
+            title: 'New Message'
         }
     };
     var chat = snapshot.val();
     if (chat != undefined && chat['request'] != undefined && chat['request']['mentor'] != undefined) {
         var mentorId = chat['request']['mentor']['id'];
         var hackerId = chat['request']['hacker']['id'];
+        var mentorName = chat['request']['mentor']['name'];
+        var hackerName = chat['request']['hacker']['name'];
         if (mentorId == undefined || mentorId == '' || hackerId == undefined || hackerId == ''){
             return;
         }
         var userIds = [mentorId, hackerId];
+        var userNames = [parseFirstName(mentorName), parseFirstName(hackerName)];
     
         firebaseRef.child("/mobile/chats/"+chatKey+"/messages").on("child_added", function(messageSnapshot) {
             var message = messageSnapshot.val();
@@ -157,7 +169,7 @@ firebaseRef.child("/mobile/chats").on("child_added", function(snapshot) {
                 var userId = userIds[i];
                 if (userId != senderId) {
                     chatForm['where']['email_hash'] = userId;
-                    chatForm['data']['alert'] = text;
+                    chatForm['data']['alert'] = userNames[1 - i] + ': ' + text;
                     parseOptions['body'] = chatForm;
                     request(parseOptions, function (error, response, body) {
                         if (!error && response.statusCode == 200) {
