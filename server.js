@@ -23,19 +23,19 @@ var parseOptions = {
     }
 };
 
-var currentTime = new Date();
+var times = {"update": new Date(), "mentoring": new Date(), "chat": new Date()};
 // Updates Listener
 firebaseRef.child("/mobile/updates").limitToLast(1).on("child_added", function(snapshot) {
     var update = snapshot.val();
     var updateTime = new Date(update.time);
 
-    if (updateTime - currentTime < 0) {
+    if (updateTime - times['update'] < 0) {
         return;
     }
     if (update.description.length < 5) {
         return;
     }
-
+    times['update'] = updateTime;
     var androidTitle = update.name;
     if (androidTitle == undefined || androidTitle.length == 0) {
         androidTitle = "Hack the North";
@@ -73,9 +73,10 @@ firebaseRef.child("/mobile/mentoring/requests").on("child_added", function(snaps
     if (requestClaimTimestamp != undefined && requestClaimTimestamp != '') {
         return;
     }
-    if (requestTime - currentTime < 0) {
+    if (requestTime - times['mentoring'] < 0) {
         return;
     }
+    times['mentoring'] = requestTime;
     var category = mentoringRequest.category;
     var hackerId = mentoringRequest.hacker.id;
     var description = 'New ' + category + ' request'
@@ -143,9 +144,10 @@ firebaseRef.child("/mobile/chats").on("child_added", function(snapshot) {
                 return;
             }
             var messageTime = new Date(message.timestamp);
-            if (messageTime - currentTime < 0) {
+            if (messageTime - times['chat'] < 0) {
                 return;
             }
+            times['chat'] = messageTime;
             var senderId = message.sender;
             var text = message.text;
             for (var i in userIds) {
