@@ -93,6 +93,9 @@ firebaseRef.child("/mobile/mentoring/requests").on("child_added", function(snaps
         }
     };
     firebaseRef.child("/mobile/users").on("value", function(userSnapshot) {
+        if (requestTime - times['mentoring'] < 0) {
+            return;
+        }
         var allUsers = userSnapshot.val();
         for (var key in allUsers) {
             user = allUsers[key];
