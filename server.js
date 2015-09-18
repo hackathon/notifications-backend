@@ -96,9 +96,9 @@ firebaseRef.child("/mobile/mentoring/requests").on("child_added", function(snaps
         for (var key in allUsers) {
             user = allUsers[key];
             
-            if (user.is_mentor && user.subscriptions !== undefined && 
+            if (user.is_mentor && user.subscriptions != undefined && 
                 user.subscriptions.indexOf(category) > -1 && 
-                user.id !== undefined && user.id !== hackerId){
+                user.id != undefined && user.id !== hackerId){
                 mentoringRequestForm['where']['email_hash'] = user.id;
                 parseOptions['body'] = mentoringRequestForm;
                 console.log(parseOptions);
