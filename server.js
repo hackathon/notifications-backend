@@ -37,7 +37,7 @@ firebaseRef.child("/mobile/updates").limitToLast(1).on("child_added", function(s
     var update = snapshot.val();
     var updateTime = new Date(update.time);
 
-    if (updateTime - times['update'] < 0) {
+    if (updateTime - times['update'] <= 0) {
         return;
     }
     if (update.name == undefined || update.name.length == 0) {
@@ -77,15 +77,12 @@ firebaseRef.child("/mobile/mentoring/requests").on("child_added", function(snaps
     if (requestClaimTimestamp != undefined && requestClaimTimestamp != '') {
         return;
     }
-    if (requestTime - times['mentoring'] < 0) {
+    if (requestTime - times['mentoring'] <= 0) {
         return;
     }
     var category = mentoringRequest.category;
     var hackerId = mentoringRequest.hacker.id;
     var description = mentoringRequest.description;
-    console.log(category);
-    console.log(hackerId);
-    console.log(description);
     if (category == undefined || hackerId == undefined || description == undefined) {
         return;
     }
@@ -102,10 +99,7 @@ firebaseRef.child("/mobile/mentoring/requests").on("child_added", function(snaps
             alert: alertMessage
         }
     };
-    firebaseRef.child("/mobile/users").on("value", function(userSnapshot) {
-        if (requestTime - times['mentoring'] < 0) {
-            return;
-        }
+    firebaseRef.child("/mobile/users").once("value", function(userSnapshot) {
         var allUsers = userSnapshot.val();
         for (var key in allUsers) {
             user = allUsers[key];
@@ -114,8 +108,11 @@ firebaseRef.child("/mobile/mentoring/requests").on("child_added", function(snaps
                 user.id != undefined && user.id !== hackerId){
                 mentoringRequestForm['where']['email_hash'] = user.id;
                 parseOptions['body'] = mentoringRequestForm;
+                console.log(mentoringRequestForm);
+                console.log(requestTime);
                 request(parseOptions, function (error, response, body) {
                     if (!error && response.statusCode == 200) {
+
                         console.log("MENTORING REQUEST WORKED");
                     }
                     else {
@@ -159,7 +156,7 @@ firebaseRef.child("/mobile/chats").on("child_added", function(snapshot) {
                 return;
             }
             var messageTime = new Date(message.timestamp);
-            if (messageTime - times['chat'] < 0) {
+            if (messageTime - times['chat'] <= 0) {
                 return;
             }
             times['chat'] = messageTime;
@@ -173,6 +170,7 @@ firebaseRef.child("/mobile/chats").on("child_added", function(snapshot) {
                     parseOptions['body'] = chatForm;
                     request(parseOptions, function (error, response, body) {
                         if (!error && response.statusCode == 200) {
+                            console.log(senderId);
                             console.log("CHAT NOTIFICATION WORKED");
                         }
                         else {
