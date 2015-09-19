@@ -104,15 +104,15 @@ firebaseRef.child("/mobile/mentoring/requests").on("child_added", function(snaps
         for (var key in allUsers) {
             user = allUsers[key];
             if (user.is_mentor && user.subscriptions != undefined && 
-                user.subscriptions.indexOf(mentoringRequest.category) > -1 && 
-                user.id != undefined && user.id !== hackerId){
+                user.id != undefined && user.id !== hackerId &&
+                (mentoringRequest.category == 'other' || 
+                    user.subscriptions.indexOf(mentoringRequest.category) > -1)){
                 mentoringRequestForm['where']['email_hash'] = user.id;
                 parseOptions['body'] = mentoringRequestForm;
                 console.log(mentoringRequestForm);
                 console.log(requestTime);
                 request(parseOptions, function (error, response, body) {
                     if (!error && response.statusCode == 200) {
-
                         console.log("MENTORING REQUEST WORKED");
                     }
                     else {
